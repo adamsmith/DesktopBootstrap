@@ -1,0 +1,9 @@
+This work is committed to the Public Domain.
+
+If you'd like a license even though you don't need one, send me email.  In some jurisdictions, this may be required.  My intent is to mirror SQLite's approach.
+
+Though entirely optional, I would appreciate hearing from anyone who uses this code in their project!
+
+My email address is adam@adamsmith.cc.
+
+Thanks!

@@ -60,7 +60,7 @@ Training wheels
 * This will rename everything that says DesktopBootstrap to use YourProjectName.
 
 
-Your first bicycle
+Your keys
 * cd into YourProjectName/client
 * sn -k YourProjectNameStrongSignKeys.snk
 * (You may have to locate sn if it's not in your PATH.  It should be in your Visual Studio bin folder.)
@@ -115,6 +115,7 @@ Your first update
 * Now, using the Windows Services tool, restart the YourProjectNameService service.
 * The logging is pretty verbose.  Ten seconds after you restart the service, it will check for an update.  The FakeUpdateServer will send the update command XML.  The service will download the updater, verify its hash, and run it.  The updater will shut down the service and client app, update all files, and relaunch the service.  The service will relaunch the client app.  The whole process will take 
 * You can verify that the update happened by right clicking on YourProjectName.exe in Program Files, going to Properties, then the Details tab.  The version should now be 1.0.0.2!
+* Despite its name and poor design, FakeUpdateServer has been successfully serving updates to over 100,000 clients.
 
 
 Accessorize
