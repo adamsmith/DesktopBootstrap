@@ -36,7 +36,7 @@ namespace DesktopBootstrapUpdateSigner {
             }
             if (curPath.Length > 0) {
                 curPath = Path.Combine(curPath, "Keys");
-                txtPrivateKeyFilePath.Text = Path.Combine(curPath, @"self_signed\desktop_bootstrap_client_update_key\PROD\server-certificate-with-encrypted-key.p12");
+                txtPrivateKeyFilePath.Text = Path.Combine(curPath, @"self_signed\desktopbootstrap_client_update_key\PROD\server-certificate-with-encrypted-key.p12");
             } else {
                 MessageBox.Show("Couldn't guess at the key file path.");
             }
