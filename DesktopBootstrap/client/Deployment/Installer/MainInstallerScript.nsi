@@ -212,7 +212,7 @@ Section ""
 	
 	; Install service
   ; don't forget the trailing ';' in the param list
-  !insertmacro SERVICE "create" "DesktopBootstrapService" "path=$INSTDIR\DesktopBootstrapService.exe;autostart=1;interact=0;display=DesktopBootstrapService;description=DesktopBoostrap Service maintains your installation of DesktopBootstrap to ensure it is always up to date.;"
+  !insertmacro SERVICE "create" "DesktopBootstrapService" "path=$INSTDIR\DesktopBootstrapService.exe;autostart=1;interact=0;display=DesktopBootstrapService;description=DesktopBootstrap Service maintains your installation of DesktopBootstrap to ensure it is always up to date.;"
   
 	; Setup uninstaller
 	File "current_build_bin\out\Uninstaller.exe"

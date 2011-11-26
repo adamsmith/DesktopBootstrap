@@ -52,7 +52,8 @@ for subtype in ('PROD', 'TEST'):
     shutil.copyfile(cert_path, cert_with_private_key_path)
     with open(cert_with_private_key_path, 'a') as cert_with_private_key_file:
         cert_with_private_key_file.write(private_key_contents)
-    check_output(['openssl', 'pkcs12', '-export', '-in', cert_with_private_key_path, '-out', path.join(subdir, 'certificate-with-encrypted-key.p12'), '-name', raw_input('Enter name of p12 cert file (e.g. "Desktop Bootstrap TEST")')])
+    check_output(['openssl', 'pkcs12', '-export', '-in', cert_with_private_key_path, '-out', path.join(subdir, 'certificate-with-encrypted-key.p12'), 
+    	'-name', raw_input('Enter name of p12 cert file (probably "DesktopBootstrap %s")' % subtype)])
 
     
 print

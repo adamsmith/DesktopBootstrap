@@ -20,17 +20,17 @@ Function ${un}KillAllAvailableRunningInstances
 	
 	FindProcDLL::FindProc "DesktopBootstrap.exe"
 	${If} $R0 == 1
-		${Debug} "DesktopBootstrap is currently running.  Killing it now..."
+		!insertmacro ${un}Debug  "DesktopBootstrap is currently running.  Killing it now..."
 		
 		killloop:
 		KillProcDLL::KillProc "DesktopBootstrap.exe"
 		${If} $R0 != 0 ; 0 = process successfully terminated
 		${AndIf} $R0 != 603 ; 603 = process was not running.  need this for multi-killproc looping
-			${Debug} "Error killing DesktopBootstrap.exe."
+			!insertmacro ${un}Debug  "Error killing DesktopBootstrap.exe."
 		${EndIf}
 		
 		${If} $R0 == 0
-			${Debug} "Sleeping for 8 seconds so DesktopBootstrap.exe is really gone..."
+			!insertmacro ${un}Debug  "Sleeping for 8 seconds so DesktopBootstrap.exe is really gone..."
 			Sleep 8000
 			
 			; now loop again in case there's another instance of DesktopBootstrap running
