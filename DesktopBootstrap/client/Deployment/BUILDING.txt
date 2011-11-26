@@ -1,0 +1,13 @@
+* The project and solution files are all formatted for Visual Studio 2010.
+
+* The build script assumes VS 2010 is in "C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE"
+
+* Before you start the build script, at least one instance of Visual Studio must be running, or else the Dotfuscator step will fail.
+
+* Also, I have UAC turned off on my Windows box.  Things might not work if you have UAC, but they might, especially if you've started your cmd.exe with Admin rights and you're not building from a network drive.
+
+* cd into Installer, and type "nant", press Enter, and you're off to the races.
+
+* Note that if you are working on a production build, or care about version numbers, you'll have to have a 'builds' folder under the Installer folder.  The nant script finds the next build number based on the build numbers already in that folder (e.g. 1, 2, 3, so the next would be build #4).  We should only have one official 'builds' folder so eventually this will be available on a network drive or a dropbox shared folder.
+
+* Since you'll be using the free version of Dotfuscator that's bundled with VS, you will have to hit the "Run" button and then close the window when it's done.

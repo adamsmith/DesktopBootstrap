@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project xmlns="http://nant.sf.net/release/0.86-beta1/nant.xsd" name="DesktopBootstrap" default="build">
+
+	<property name="nant.settings.currentframework" value="net-2.0"/>
+	
+	<property name="curdir" value="${directory::get-current-directory()}" />
+	<property name="solutiondir" value="${curdir}\..\.." />
+	<property name="inbindir" value="${curdir}\current_build_bin\in" />
+	<property name="inbinobfuscateddir" value="${curdir}\current_build_bin\in-obfuscated" />
+	<property name="outdir" value="${curdir}\current_build_bin\out" />
+	<property name="buildsdir" value="${curdir}\builds" />
+	<property name="makensis" value="${curdir}\..\..\..\tools\ThirdParty\NSIS\makensis.exe" />
+	<property name="authenticodekey" value="${curdir}\..\AuthenticodeKey\AuthenticodeKey.pfx" />
+	<property name="authenticodepassword" value="foo" />
+	<property name="devenv" value="C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE" />
+	<property name="sacom" value="C:\Program Files\SmartAssembly 6\SmartAssembly.com" />
+  
+  <target name="build">
+  
+  
+  	<!-- Figure out what the next build number should be -->
+		<property name="buildnum" value="0" />
+		<mkdir dir="${buildsdir}" if="${not directory::exists(buildsdir)}" />
+		<foreach item="Folder" in="${buildsdir}" property="foldername">
+    	<regex pattern="(?'foldername'\d+)$" input="${foldername}" /> <!-- Chop of everything leading up to the build number -->
+    	<if test="${int::parse(foldername) > int::parse(buildnum)}">
+    		<property name="buildnum" value="${foldername}" />
+    	</if>
+		</foreach>
+		<property name="buildnum" value="${int::parse(buildnum) + 1}" /> <!-- Set current buildnum to max(buildnums) + 1 -->
+		<property name="buildnumstring" value="1.0.0.${buildnum}" />
+		<echo message="Build number is: ${buildnum}." />
+		
+		
+		<!-- Delete Everything in 'current_build_bin', Recursively -->
+		<delete><fileset><include name="${curdir}\current_build_bin\**.*" /></fileset></delete>
+		
+		
+		<!-- Update .NET assembly version number. -->
+		<!-- (backup old version info first, if it exists; this backup will be restored after Visual Studio builds.) -->
+		<move file="${solutiondir}\AssemblyVersionInfo.cs" tofile="${solutiondir}\AssemblyVersionInfo_backup.cs" />
+		<echo file="${solutiondir}\AssemblyVersionInfo.cs">using System.Reflection; [assembly: AssemblyVersion("1.0.0.${buildnum}")] [assembly: AssemblyFileVersion("1.0.0.${buildnum}")]</echo>
+		
+		
+  	<!-- Rebuild VS Solution -->
+    <delete file="${curdir}\VisualStudioBuildLog.txt" />
+  	<exec program="${devenv}\devenv.exe" verbose="true" failonerror="false" resultproperty="VisualStudioReturnCode">
+    	<arg value="/Rebuild" /><arg value="Release" />
+    	<arg value="${solutiondir}\DesktopBootstrap.sln" />
+      <arg value="/Out" /><arg value="${outdir}\VisualStudioBuildLog.txt" />
+		</exec>
+		<!-- restore the backed-up AssemblyVersionInfo regardless of whether the exec task succeeded or failed -->
+		<move file="${solutiondir}\AssemblyVersionInfo_backup.cs" tofile="${solutiondir}\AssemblyVersionInfo.cs" overwrite="true" />
+		<if test="${int::parse(VisualStudioReturnCode) != 0}"><fail message="Visual Studio returned exit code ${VisualStudioReturnCode}." /></if>
+		
+		
+		<!-- Copy DLL's to a more local, setup-specific directory -->
+		<copy todir="${inbindir}\" file="${solutiondir}\DesktopBootstrap\bin\Release\DesktopBootstrap.exe" />
+		<copy todir="${inbindir}\" file="${solutiondir}\DesktopBootstrap\bin\Release\DesktopBootstrap.pdb" />
+		<copy todir="${inbindir}\" file="${solutiondir}\DesktopBootstrap\bin\Release\DesktopBootstrap.exe.config" />
+		
+		<copy todir="${inbindir}\" file="${solutiondir}\DesktopBootstrapService\bin\Release\DesktopBootstrapService.exe" />
+		<copy todir="${inbindir}\" file="${solutiondir}\DesktopBootstrapService\bin\Release\DesktopBootstrapService.pdb" />
+		<copy todir="${inbindir}\" file="${solutiondir}\DesktopBootstrapService\bin\Release\DesktopBootstrapService.exe.config" />
+		
+		<copy todir="${inbindir}\"><fileset><include name="${solutiondir}\DesktopBootstrap\bin\Release\*.dll" /></fileset></copy>
+		
+		
+		<!-- Obfuscate Using Dotfuscator -->
+		<exec program="${devenv}\..\..\PreEmptive Solutions\Dotfuscator Community Edition\dotfuscator.exe" verbose="true" failonerror="true">
+			<arg value="${curdir}\DotfuscatorProject.xml" />
+		</exec>
+		
+		
+		<!-- Strong Sign Service Assemblies -->
+		<foreach item="File" in="${inbinobfuscateddir}" property="filename">
+			<exec program="sn">
+				<arg value="-Ra" /> <arg value="${filename}" /> <arg value="${solutiondir}\DesktopBootstrapStrongSignKeys.snk" />
+			</exec>
+		</foreach>
+		
+		
+		<!-- Authenticode Sign Obfuscated Assemblies -->
+		<if test="${file::exists(authenticodekey)}">
+			<foreach item="File" in="${inbinobfuscateddir}" property="filename">
+				<exec program="signtool.exe">
+					<arg value="sign" /> <arg value="/f" /> <arg value="${authenticodekey}" /> <arg value="/p" /> <arg value="${authenticodepassword}" />
+					<arg value="/t" /> <arg value="http://timestamp.verisign.com/scripts/timstamp.dll" />
+					<arg value="/v" /> <arg value="${filename}" />
+				</exec>
+			</foreach>
+		</if>
+		<if test="${not file::exists(authenticodekey)}">
+			<echo message="No Authenticode key found.  Skipping..." />
+			<sleep seconds="3" />
+		</if>
+		
+		
+		<!-- Create NSIS Uninstaller, and Authenticode sign it -->
+		<exec program="${makensis}">
+			<arg value="/DWRITE_UNINSTALLER_ONLY" /> <arg value="/DVERSION=${buildnumstring}" /> <arg value="${curdir}\MainInstallerScript.nsi" />
+		</exec>
+		<exec program="${outdir}\DesktopBootstrapUninstallerGenerator.exe" workingdir="${outdir}" /> <!-- this will create ${outdir}\Uninstaller.exe -->
+		<sleep milliseconds="2000" /> <!-- Give DesktopBootstrapUninstallerGenerator.exe time to release its handle on Uninstaller.exe -->
+		<if test="${file::exists(authenticodekey)}">
+			<exec program="signtool.exe">
+				<arg value="sign" /> <arg value="/f" /> <arg value="${authenticodekey}" /> <arg value="/p" /> <arg value="${authenticodepassword}" />
+				<arg value="/t" /> <arg value="http://timestamp.verisign.com/scripts/timstamp.dll" />
+				<arg value="/v" /> <arg value="${outdir}\Uninstaller.exe" />
+			</exec>
+		</if>
+		
+		
+		<!-- Create NSIS Installer and Uninstaller, and Authenticode sign them (if key available) -->
+		<exec program="${makensis}">
+			<arg value="/DVERSION=${buildnumstring}" /> <arg value="${curdir}\MainInstallerScript.nsi" />
+		</exec>
+		<if test="${file::exists(authenticodekey)}">
+			<exec program="signtool.exe">
+				<arg value="sign" /> <arg value="/f" /> <arg value="${authenticodekey}" /> <arg value="/p" /> <arg value="${authenticodepassword}" />
+				<arg value="/t" /> <arg value="http://timestamp.verisign.com/scripts/timstamp.dll" />
+				<arg value="/v" /> <arg value="${outdir}\DesktopBootstrapInstaller.exe" />
+			</exec>
+		</if>
+		<exec program="${makensis}">
+			<arg value="/DVERSION=${buildnumstring}" /> <arg value="${curdir}\MainUpdaterScript.nsi" />
+		</exec>
+		<if test="${file::exists(authenticodekey)}">
+			<exec program="signtool.exe">
+				<arg value="sign" /> <arg value="/f" /> <arg value="${authenticodekey}" /> <arg value="/p" /> <arg value="${authenticodepassword}" />
+				<arg value="/t" /> <arg value="http://timestamp.verisign.com/scripts/timstamp.dll" />
+				<arg value="/v" /> <arg value="${outdir}\DesktopBootstrapUpdater.exe" />
+			</exec>
+		</if>
+		
+		
+		<!-- Clean up DesktopBootstrapUninstallerGenerator.exe and Uninstaller.exe -->
+		<delete file="${outdir}\DesktopBootstrapUninstallerGenerator.exe" />
+		<delete file="${outdir}\Uninstaller.exe" />
+		
+		
+		<!-- Copy outbin files to the final build directory -->
+		<property name="finalbuilddir" value="${buildsdir}\${buildnum}" />
+		<copy todir="${finalbuilddir}\" flatten="true"><fileset><include name="${outdir}\*.*" /></fileset></copy>
+		
+		
+		<!-- Rename Updater to include build number -->
+		<move file="${finalbuilddir}\DesktopBootstrapUpdater.exe" tofile="${finalbuilddir}\DesktopBootstrapUpdater${buildnum}.exe" />
+		
+		
+		<echo message="Final build is in ${finalbuilddir}." />
+		
+  </target>
+</project>
