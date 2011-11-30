@@ -9,7 +9,11 @@ print('new project name: %s' % proj_name)
 
 def replace_in_dir_and_file_names(old_substring, new_substring):
     def rename_thing(dir_or_file, root):
-        os.rename(path.join(root, dir_or_file), path.join(root, dir_or_file.replace(old_substring, new_substring)))
+        try:
+            os.rename(path.join(root, dir_or_file), path.join(root, dir_or_file.replace(old_substring, new_substring)))
+        except Exception, e:
+            print root + " " + dir_or_file
+            raise
         
     renamed_a_directory = True
     while(renamed_a_directory):
@@ -26,7 +30,7 @@ def replace_in_dir_and_file_names(old_substring, new_substring):
 def replace_in_file_contents(old_substring, new_substring):
     file_suffixes = ';*.nsi;*.nsh;*.cs;*.sln;*.csproj;*.build;*.xml;*.bat;*.py;*.resx;*.settings;*.config;*.conf;*.rtf;*.java;*.sh;*.saproj;*.reg;*gitignore;*.reg'.split(';*')
     for root, dirs, files in os.walk(proj_name):
-        for file_path in [path.join(root, x) for x in files if any(map(lambda suffix: x.endswith(file_suffixes), suffixes))]:
+        for file_path in [path.join(root, x) for x in files if any(map(lambda suffix: x.endswith(suffix), file_suffixes))]:
             with open(file_path, 'rb') as old_file:
                 old_contents = old_file.read()
             new_contents = old_contents.replace(old_substring, new_substring)
@@ -36,12 +40,7 @@ def replace_in_file_contents(old_substring, new_substring):
 
 
 # we'll want to rename DesktopBootstrap, desktopbootstrap, and DESKTOPBOOTSTRAP
-def invoke_replace_for_various_casings(replace_function):
+for replace_function in (replace_in_dir_and_file_names, replace_in_file_contents):
     replace_function('DesktopBootstrap', proj_name)
-    replace_function('DesktopBootstrap'.lower(), proj_name.lower().lower())
+    replace_function('DesktopBootstrap'.lower(), proj_name.lower())
     replace_function('DesktopBootstrap'.upper(), proj_name.upper())
-
-
-invoke_replace_for_various_casings(replace_in_dir_and_file_names)
-invoke_replace_for_various_casings(replace_in_file_contents)
-

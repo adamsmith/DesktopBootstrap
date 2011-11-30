@@ -4,6 +4,8 @@ I've written multiple desktop apps from scratch.  There's a lot of repeated work
 
 It's built around a few assumptions and technology choices, which should be suitable for most projects.  Most code is written in C#, targeted against version 2 of the .NET framework.  We assume all users will be running at least Windows XP.  The installer is written using NSIS.  We assume that updates should be done in the background, with no UI or UAC elevation prompts.
 
+This framework comes from a project that is currently supporting over 100k users.
+
 Here is a breakdown of these technology choices.  You are free to change them to suit your application, of course.  Afterwards is a list of instructions for getting started with your particular project.
 
 
@@ -22,7 +24,7 @@ Here is a breakdown of these technology choices.  You are free to change them to
 * Users love software that gets better over time, with no effort on their part.
 * Our update mechanism is simple, and secure.
 * Most updates are applied by the Windows service, running as SYSTEM, so the user doesn't run into any UAC elevation prompts.
-* The client app also runs update check code, in case something gets broken in the service..
+* The client app also runs update check code, in case something gets broken in the service.
 * The update system assumes that any time is a good time for an updates, which you'll need to modify if there's some user interaction that shouldn't be interrupted.
 * All update commands are signed using public key cryptography.
 * The updates are downloaded over plain HTTP, but their hashes are checked before execution.
