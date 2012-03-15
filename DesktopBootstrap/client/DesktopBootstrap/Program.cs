@@ -28,6 +28,9 @@ namespace DesktopBootstrap {
                 bool createdNew;
                 s_instanceMutex = new Mutex(true, "DesktopBootstrapClientInstance", out createdNew);
                 if (!createdNew) {
+                    // remove reference to mutex so we don't try to release it later
+                    s_instanceMutex = null;
+
                     if (Library.IsDebugMode()) {
                         OutputDebugString("DesktopBootstrap is already running.  Exiting this instance.");
                     }
